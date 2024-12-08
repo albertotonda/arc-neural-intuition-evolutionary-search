@@ -40,7 +40,7 @@ def extract_keywords_from_dsl(file_name : str) -> list[str] :
         m = regex.search("def ([0-9|a-z]+)\(", line)
         if m is not None :
             function_name = m.group(1)
-            print("Found a function named \"%s\"!" % function_name)
+            logger.info("Found a function named \"%s\"!" % function_name)
             
             keywords["functions"].append(function_name)
             
@@ -49,7 +49,7 @@ def extract_keywords_from_dsl(file_name : str) -> list[str] :
         m = regex.search("([A-Z|\_]+)\s+=", line)
         if m is not None :
             constant_name = m.group(1)
-            print("Found a constant named \"%s\"!" % constant_name)
+            logger.info("Found a constant named \"%s\"!" % constant_name)
             
             keywords["constants"].append(constant_name)
             
@@ -59,7 +59,7 @@ def extract_keywords_from_dsl(file_name : str) -> list[str] :
 
 def extract_class_labels_from_verifiers(verifiers_file : str, 
                                         operators : list[str], terminals : list[str],
-                                        keyword_to_index : dict,
+                                        keyword_to_index : dict, logger
                                         ) -> dict :
     
     # 'class_labels' is a matrix with: task_id, and then a value 0/1 for each
@@ -92,7 +92,7 @@ def extract_class_labels_from_verifiers(verifiers_file : str,
             # we are inside a function, so let's store the task id
             task_id = m.group(1)
             class_labels["task_id"].append(task_id)
-            print("Found verifier for task \"%s\"!" % task_id)
+            logger.info("Found verifier for task \"%s\"!" % task_id)
             
             # all the function is assumed to be stored in a single row
             line = verifiers_text[line_index+1]
@@ -106,23 +106,40 @@ def extract_class_labels_from_verifiers(verifiers_file : str,
             # naively checking for the presence of certain keywords can
             # work for most functions, but not for everything; we need to
             # create separate regular expressions for each operator and terminal
+            # for operator in operators :
+            #     regular_expression = "[,\s+|\(]" + operator + "[\(|,|\)]"
+            #     m = regex.search(regular_expression, line)
+            #     if m is not None : 
+            #         operator_index = keyword_to_index[operator]
+            #         y_task[0,operator_index] = 1
+            #         task_keywords_found.append(operator)
+                    
+            # for terminal in terminals :
+            #     regular_expression = "[,\s+|\(]" + terminal + "[,|\)]"
+            #     m = regex.search(regular_expression, line)
+            #     if m is not None :
+            #         terminal_index = keyword_to_index[terminal]
+            #         y_task[0,terminal_index] = 1
+            #         task_keywords_found.append(terminal)
+            
+            # unfortunately, the regexp matching seems too finnicky to get right
+            # in a short amount of time, so let's just go for 'split', it should
+            # work with verifiers in functional form
+            line = line.replace("(", " ").replace(")", " ").replace(",", " ")
+            keywords = [w.strip() for w in line.split()]
             for operator in operators :
-                regular_expression = operator + "[\(|,|\)]"
-                m = regex.search(regular_expression, line)
-                if m is not None : 
+                if operator in keywords :
                     operator_index = keyword_to_index[operator]
                     y_task[0,operator_index] = 1
                     task_keywords_found.append(operator)
                     
             for terminal in terminals :
-                regular_expression = "[,\s+|\(]" + terminal + "[,|\)]"
-                m = regex.search(regular_expression, line)
-                if m is not None :
+                if terminal in keywords :
                     terminal_index = keyword_to_index[terminal]
                     y_task[0,terminal_index] = 1
                     task_keywords_found.append(terminal)
             
-            print("For task \"%s\", found keywords: %s" % 
+            logger.info("For task \"%s\", found keywords: %s" % 
                  (task_id, str(task_keywords_found)))
             
             # it's time to stack the current class label vector at the bottom
@@ -134,7 +151,7 @@ def extract_class_labels_from_verifiers(verifiers_file : str,
         
         line_index += 1
     
-    print("Final shape of Y:", Y.shape)
+    logger.info("Final shape of Y:" + str(Y.shape))
     
     # at this point, take X and place it in the dictionary
     for i, class_name in enumerate(sorted_class_names) :
@@ -154,10 +171,15 @@ if __name__ == "__main__" :
     # output file for the class labels
     class_labels_file = "../data/neural_network_y.csv"
     
+    # this is just to have some proper logging, useful for debugging
+    import common_logging
+    logger = common_logging.initialize_logging("../local", "generate_nn_X_y_data", date=False)
+    
+    
     # parse dsl_file and get keywords
-    print("Parsing keywords from file \"%s\"..." % dsl_file)
+    logger.info("Parsing keywords from file \"%s\"..." % dsl_file)
     keywords = extract_keywords_from_dsl(dsl_file)
-    print("Found a total of %d functions and %d constants" % 
+    logger.info("Found a total of %d functions and %d constants" % 
           (len(keywords["functions"]), len(keywords["constants"])))
     
     # save keywords to a file, with a class number associated; "I" and "call"
@@ -167,7 +189,7 @@ if __name__ == "__main__" :
     dict_class_names = dict()
     dict_class_names["class_name"] = all_keywords
     dict_class_names["class_label"] = [i for i in range(0, len(dict_class_names["class_name"]))]
-    print("Saving results to file \"%s\"..." % class_names_file)
+    logger.info("Saving results to file \"%s\"..." % class_names_file)
     df_class_names = pd.DataFrame.from_dict(dict_class_names)
     df_class_names.to_csv(class_names_file, index=False)
     
@@ -182,11 +204,14 @@ if __name__ == "__main__" :
                         }
     
     dict_class_labels = extract_class_labels_from_verifiers(
-        verifiers_file, operators, terminals, keyword_to_index
+        verifiers_file, operators, terminals, keyword_to_index, logger
         )
-    print("Found verifiers for a total of %d tasks!" % len(dict_class_labels["task_id"]))
+    logger.info("Found verifiers for a total of %d tasks!" % len(dict_class_labels["task_id"]))
     
     # save everything to a Pandas dataframe
-    print("Saving results to file \"%s\"..." % class_labels_file)
+    logger.info("Saving results to file \"%s\"..." % class_labels_file)
     df = pd.DataFrame.from_dict(dict_class_labels)
     df.to_csv(class_labels_file, index=False)
+    
+    # close logging
+    common_logging.close_logging(logger)
