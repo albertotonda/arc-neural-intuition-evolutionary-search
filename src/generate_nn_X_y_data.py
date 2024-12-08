@@ -172,8 +172,8 @@ if __name__ == "__main__" :
     class_labels_file = "../data/neural_network_y.csv"
     
     # this is just to have some proper logging, useful for debugging
-    import common_logging
-    logger = common_logging.initialize_logging("../local", "generate_nn_X_y_data", date=False)
+    import common
+    logger = common.initialize_logging("../local", "generate_nn_X_y_data", date=False)
     
     
     # parse dsl_file and get keywords
@@ -211,7 +211,9 @@ if __name__ == "__main__" :
     # save everything to a Pandas dataframe
     logger.info("Saving results to file \"%s\"..." % class_labels_file)
     df = pd.DataFrame.from_dict(dict_class_labels)
+    # this is to force the 'task_id' column to be interpreted as a string
+    df["task_id"] = df["task_id"].astype(str)
     df.to_csv(class_labels_file, index=False)
     
     # close logging
-    common_logging.close_logging(logger)
+    common.close_logging(logger)

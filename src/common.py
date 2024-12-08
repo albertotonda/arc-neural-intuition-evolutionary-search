@@ -2,13 +2,15 @@
 """
 Created on Mon Nov 25 08:06:18 2024
 
-Common library with utility functions for logging.
+Common library with utility functions for logging and pre-processing ARC tasks
 
 @author: Alberto Tonda
 """
 import datetime
+import json
 import logging
 import os
+import numpy as np
 
 def initialize_logging(path: str, log_name: str = "", date: bool = True) -> logging.Logger :
     """
@@ -68,11 +70,33 @@ def close_logging(logger: logging.Logger) :
 
     return
 
+def load_arc_task_from_json(json_file : str) :
+    """
+    Load an ARC task from a JSON file, expecting the usual structure: a list
+    of dictionaries, each with an "input" and an "output" key. Let's transform
+    it into a list of inputs and a list of outputs.
+    """
+    data = json.load(open(json_file, "r"))
+    output_dictionary = {"input" : [], "output" : []}
+    
+    for pair in data :
+        output_dictionary["input"].append(np.array(pair["input"]))
+        output_dictionary["output"].append(np.array(pair["input"]))
+        
+    return output_dictionary
+        
 if __name__ == "__main__" :
     
     logger = initialize_logging("../local", "my_log", date=True)
     logger.info("This is an INFO-level log message, which will appear both on screen and in the log file")
     logger.debug("And this is a DEBUG level log message, which will only appear in the log file")
+    
+    arc_task_file = "../data/re_arc/tasks/3c9b0459.json"
+    logger.info("Now, let me try reading an ARC task from a JSON file")
+    arc_task = load_arc_task_from_json(arc_task_file)
+    print("Found %d inputs and %d outputs!" % 
+          (len(arc_task["input"]), len(arc_task["output"])))
+    
     close_logging(logger)
     
     
