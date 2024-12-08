@@ -52,7 +52,7 @@ class EmbedInputOutputPair(torch.nn.Module) :
     
 
 class SiameseMultiLabelNetwork(torch.nn.Module):
-    def __init__(self, num_classes, input_channels=1):
+    def __init__(self, n_classes=190, input_channels=1):
         """
         Siamese network for multi-label classification of paired images
         
@@ -98,7 +98,7 @@ class SiameseMultiLabelNetwork(torch.nn.Module):
         )
         
         # Multi-label classification head
-        self.classification_head = torch.nn.Linear(256, num_classes)
+        self.classification_head = torch.nn.Linear(256, n_classes)
     
     def forward_once(self, x):
         """Process a single input through the convolutional base"""
@@ -131,6 +131,32 @@ class SiameseMultiLabelNetwork(torch.nn.Module):
         output = torch.sigmoid(self.classification_head(fused_features))
         
         return output
+    
+class GridPairsDataset(torch.utils.data.Dataset) :
+    """
+    This class implements a pytorch Dataset which will return two separate
+    input/output grid pairs, associated to a multi-label output.
+    """
+    def __init__(self, input_grids, output_grids, y) :
+        # 'data' is a series of tuples (input_grid, output_grid, class_labels)
+        self.input_grids = input_grids
+        self.output_grids = output_grids
+        self.y = y
+    
+    def __len__(self) :
+        return self.y.shape[0]
+    
+    def __getitem__(self, idx) :
+        input_grid = self.input_grids[idx]
+        output_grid = self.output_grids[idx]
+        y = self.y[idx]
+        
+        return (
+            torch.tensor(input_grid, dtype=torch.float32).unsqueeze(0),
+            torch.tensor(output_grid, dtype=torch.float32).unsqueeze(0),
+            torch.tensor(y, dtype=torch.float32).unsqueeze(0)
+            )
+    
     
 if __name__ == "__main__" :
     

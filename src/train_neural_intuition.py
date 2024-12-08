@@ -10,11 +10,11 @@ import json
 import os
 import numpy as np
 import pandas as pd
+import torch
 
 # local imports
 import common
-
-from neural_networks import EmbedInputOutputPair
+import neural_networks
 
 if __name__ == "__main__" :
     
@@ -24,6 +24,9 @@ if __name__ == "__main__" :
     arc_tasks_folder = "../data/re_arc/tasks"
     percentage_of_samples_for_training = 0.8
     percentage_of_samples_for_validation = 0.1
+    # hyperparameters of the optimizer
+    learning_rate = 5e-4
+    n_epochs = 10
     
     # this is a list of the training tasks
     arc_task_ids = [
@@ -113,6 +116,12 @@ if __name__ == "__main__" :
     logger.info("y_labels: %s" % str(y_labels))
     logger.info("input_grids[0]: %s" % str(input_grids[0]))
     
+    # we can now normalize everything in 0,1; we know min and max
+    input_grids = (input_grids+1) / (9+1)
+    output_grids = (output_grids+1) / (9+1)
+    logger.info("normalized input_grids[0]: %s" % str(input_grids[0]))
+    
+    
     # cool, now we have to continue the pre-processing part, creating a Dataset
     # and a DataLoader specific to our problem; however, we could also first
     # separate the dataset between training and test in a stratified fashion
@@ -121,6 +130,7 @@ if __name__ == "__main__" :
     n_test_samples = n_samples - n_training_samples - n_validation_samples
     logger.info("Of the original %d samples: train=%d, validation=%d, test=%d" %
                 (n_samples, n_training_samples, n_validation_samples, n_test_samples))
+    logger.info("Splitting data into training/validation/test...")
     
     # there might be more intricate ways of splitting the data, but for the moment
     # we just take them in-order
@@ -183,5 +193,47 @@ if __name__ == "__main__" :
         test_index += n_task_test
         
     # now we can finally create the Dataset and the DataLoader for this task
+    logger.info("Generating pytorch Datasets and DataLoaders...")
+    train_data = neural_networks.GridPairsDataset(train_input_grids, train_output_grids, y_train)
+    val_data = neural_networks.GridPairsDataset(val_input_grids, val_output_grids, y_val)
+    test_data = neural_networks.GridPairsDataset(test_input_grids, test_output_grids, y_test)
+    
+    train_loader = torch.utils.data.DataLoader(train_data, batch_size=64, shuffle=True)
+    val_loader = torch.utils.data.DataLoader(val_data, batch_size=len(val_data), shuffle=False)
+    test_data = torch.utils.data.DataLoader(test_data, batch_size=len(test_data), shuffle=False)
+    
+    # instantiate the network, and start training
+    model = neural_networks.SiameseMultiLabelNetwork(n_classes=n_keywords, input_channels=1)
+    loss = torch.nn.BCEWithLogitsLoss()
+    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=1e-4)
+    
+    # training loop
+    for epoch in range(n_epochs) :
+        # iterate over the batches
+        train_loss = 0.0
+        for input_grid, output_grid, y_sample in train_loader :
+            #G1, G2, labels = G1.to(device), G2.to(device), labels.to(device)
+            
+            optimizer.zero_grad()
+            outputs = model(input_grid, output_grid)
+            batch_loss = loss(outputs, y_sample)
+            batch_loss.backward()
+            
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+            optimizer.step()
+            train_loss += batch_loss.item()
+            
+        # at the end of the batches, compute train loss
+        train_loss = train_loss / len(train_loader)
+        
+        # also evaluate validation loss
+        with torch.no_grad() :
+            val_loss = 0.0
+            for input_grid, output_grid, y_sample in val_loader :
+                outputs = model(input_grid, output_grid)
+                val_loss = loss(outputs, y_sample)
+        
+        logger.info("Epoch %d, loss: training=%.6f, val=%.6f" %
+                    (epoch, train_loss, val_loss))
     
     common.close_logging(logger)
