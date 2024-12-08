@@ -152,9 +152,9 @@ class GridPairsDataset(torch.utils.data.Dataset) :
         y = self.y[idx]
         
         return (
-            torch.tensor(input_grid, dtype=torch.float32).unsqueeze(0),
-            torch.tensor(output_grid, dtype=torch.float32).unsqueeze(0),
-            torch.tensor(y, dtype=torch.float32).unsqueeze(0)
+            torch.tensor(input_grid, dtype=torch.float32),
+            torch.tensor(output_grid, dtype=torch.float32),
+            torch.tensor(y, dtype=torch.float32)
             )
     
     

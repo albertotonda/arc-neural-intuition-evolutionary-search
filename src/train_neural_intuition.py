@@ -25,8 +25,8 @@ if __name__ == "__main__" :
     percentage_of_samples_for_training = 0.8
     percentage_of_samples_for_validation = 0.1
     # hyperparameters of the optimizer
-    learning_rate = 5e-4
-    n_epochs = 10
+    learning_rate = 1e-6
+    n_epochs = 1000
     
     # this is a list of the training tasks
     arc_task_ids = [
@@ -213,6 +213,7 @@ if __name__ == "__main__" :
         train_loss = 0.0
         for input_grid, output_grid, y_sample in train_loader :
             #G1, G2, labels = G1.to(device), G2.to(device), labels.to(device)
+            #logger.info(str(input_grid.shape))
             
             optimizer.zero_grad()
             outputs = model(input_grid, output_grid)
@@ -233,7 +234,7 @@ if __name__ == "__main__" :
                 outputs = model(input_grid, output_grid)
                 val_loss = loss(outputs, y_sample)
         
-        logger.info("Epoch %d, loss: training=%.6f, val=%.6f" %
-                    (epoch, train_loss, val_loss))
+        logger.info("Epoch %d/%d, loss: training=%.6f, val=%.6f" %
+                    (epoch, n_epochs, train_loss, val_loss))
     
     common.close_logging(logger)
