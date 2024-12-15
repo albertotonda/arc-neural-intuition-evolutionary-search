@@ -109,7 +109,18 @@ def are_grids_pixel_identical(grid_1, grid_2) :
     
     # if we are here, at least one of the two dimensions did not match
     return False
-        
+
+def call(*args) :
+    """
+    This is an implementation of the 'call' keyword that was added to Hodel's DSL
+    """
+    # there is a variable number of arguments; we are going to treat the first
+    # one as a function pointer, and the others as regular arguments for the function
+    function_pointer = args[0]
+    
+    return function_pointer(*args[1:])
+    
+    
 if __name__ == "__main__" :
     
     logger = initialize_logging("../local", "my_log", date=True)
