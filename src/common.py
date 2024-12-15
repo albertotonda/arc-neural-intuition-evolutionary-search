@@ -70,7 +70,7 @@ def close_logging(logger: logging.Logger) :
 
     return
 
-def load_arc_task_from_json(json_file : str) :
+def load_arc_task_from_json(json_file : str, output="numpy") :
     """
     Load an ARC task from a JSON file, expecting the usual structure: a list
     of dictionaries, each with an "input" and an "output" key. Let's transform
@@ -80,10 +80,35 @@ def load_arc_task_from_json(json_file : str) :
     output_dictionary = {"input" : [], "output" : []}
     
     for pair in data :
-        output_dictionary["input"].append(np.array(pair["input"]))
-        output_dictionary["output"].append(np.array(pair["input"]))
+        if output == "numpy" :
+            output_dictionary["input"].append(np.array(pair["input"]))
+            output_dictionary["output"].append(np.array(pair["input"]))
+        elif output == "tuple" :
+            input_tuple = tuple(tuple(row) for row in pair["input"])
+            output_tuple = tuple(tuple(row) for row in pair["output"])
+            
+            output_dictionary["input"].append(input_tuple)
+            output_dictionary["output"].append(output_tuple)
         
     return output_dictionary
+
+def are_grids_pixel_identical(grid_1, grid_2) :
+    """
+    This function makes a pixel-by-pixel comparison of the grids, with the only
+    condition that they must be an iterable of iterables
+    """
+    if len(grid_1) == len(grid_2) :
+        if len(grid_1[0]) == len(grid_2[0]) :
+            for i in range(0, len(grid_1)) :
+                for j in range(0, len(grid_1[i])) :
+                    if grid_1[i][j] != grid_2[i][j] :
+                        return False
+            
+            # if we are here, everything went well
+            return True
+    
+    # if we are here, at least one of the two dimensions did not match
+    return False
         
 if __name__ == "__main__" :
     

@@ -54,7 +54,8 @@ class EmbedInputOutputPair(torch.nn.Module) :
 class SiameseMultiLabelNetwork(torch.nn.Module):
     def __init__(self, n_classes=190, input_channels=1):
         """
-        Siamese network for multi-label classification of paired images
+        Siamese network for multi-label classification of paired images,
+        created by Claude.
         
         Args:
             num_classes (int): Number of labels to predict

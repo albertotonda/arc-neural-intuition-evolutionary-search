@@ -25,7 +25,7 @@ if __name__ == "__main__" :
     percentage_of_samples_for_training = 0.8
     percentage_of_samples_for_validation = 0.1
     # hyperparameters of the optimizer
-    learning_rate = 1e-6
+    learning_rate = 1e-7
     n_epochs = 1000
     
     # this is a list of the training tasks
