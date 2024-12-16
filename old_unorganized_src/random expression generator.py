@@ -41,7 +41,7 @@ def generate_random_expression(node_tree: Dict, max_depth: int = 10, forbidden: 
         children = random.choice(valid_children_lists)
         
         # Recursively expand children
-        expanded_children = [expand_node(child, current_depth + 1) for child in children]
+        expanded_children = [expand_node(child, current_depth + 1).lstrip('_') for child in children]
         
         # Construct function call
         return f"{node}({', '.join(expanded_children)})"
@@ -88,6 +88,8 @@ def main():
     # Load node tree
     try:
         node_tree = load_node_tree('node_tree.json')
+        #print('node tree len:', len(node_tree))
+        print(node_tree.keys())
     except FileNotFoundError:
         print("Error: node_tree.json not found")
         return
