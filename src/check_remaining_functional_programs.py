@@ -45,7 +45,8 @@ if __name__ == "__main__" :
     
     # get the names and content of all (global) variables that start with 'verify',
     # create a list with ['task_id', 'function_code'] elements
-    functional_functions_names = [[v.split("_")[1], c] for v, c in globals().items() if v.startswith("verify")]
+    functional_functions_names = [[v.split("_")[1], c] for v, c in globals().items() 
+                                  if v.startswith("verify")]
     
     if len(tasks_to_be_checked) > 0 :
         functional_functions_names = [f for f in functional_functions_names 

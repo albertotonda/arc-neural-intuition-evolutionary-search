@@ -8,6 +8,7 @@ Script to check the correctness of programs in functional form.
 """
 import os
 import sys
+import traceback
 
 # local library
 import common
@@ -18,25 +19,28 @@ if __name__ == "__main__" :
     functional_form_file = "../old_unorganized_src/functional_dsl_functions.py"
     arc_tasks_folder = "../data/re_arc/tasks"
     
-    tasks_to_be_checked = ['2204b7a8',
-     '272f95fa',
-     '2dd70a9a',
-     '73251a56',
-     '7447852a',
-     '77fdfe62',
-     '83302e8f',
-     '8e5a5113',
-     '93b581b8',
-     '952a094c',
-     '995c5fa3',
-     'a3df8b1e',
-     'a78176bb',
-     'a8c38be5',
-     'bbc9ae5d',
-     'caa06a1f',
-     'd8c310e9',
-     'e179c5f4',
-     'ea786f4a']
+    # tasks_to_be_checked = [
+    #  '2204b7a8',
+    #  '272f95fa',
+    #  '2dd70a9a',
+    #  '73251a56',
+    #  '7447852a',
+    #  '77fdfe62',
+    #  '83302e8f',
+    #  '8e5a5113',
+    #  '93b581b8',
+    #  '952a094c',
+    #  '995c5fa3',
+    #  'a3df8b1e',
+    #  'a78176bb',
+    #  'a8c38be5',
+    #  'bbc9ae5d',
+    #  'caa06a1f',
+    #  'd8c310e9',
+    #  'e179c5f4',
+    #  'ea786f4a'
+    #  ]
+    tasks_to_be_checked = []
     
     # now, there are several ways of dealing with this file, as it is basically
     # a series of macros with different variable names. A first try: I import it
@@ -84,15 +88,15 @@ if __name__ == "__main__" :
         print("For task %s, found a total of %d input-output pairs!" %
               (task_id, n_pairs))
         
-        n_pairs = 10 # TODO comment this line, it's just for debugging
+        n_pairs = 100 # TODO comment this line, it's just for debugging
         
         errors = []
-        for index in range(0, n_pairs) :
+        for pair_index in range(0, n_pairs) :
             #print("- Now evaluating input/output pair %d/%d..." %
             #      (index+1, n_pairs), end = '')
             
-            I = pairs["input"][index]
-            O_measured = pairs["output"][index]
+            I = pairs["input"][pair_index]
+            O_measured = pairs["output"][pair_index]
             
             try :
                 local_variables = locals().copy()
@@ -126,16 +130,24 @@ if __name__ == "__main__" :
             
         # we also want to check the regular verifiers
         print("Now checking regular verifier for the same task...")
+        from common import call
         import linear_verifiers
+
         verifier_name = "verify_" + task_id
         verifier_function = getattr(linear_verifiers, verifier_name)
+        verifier_globals = vars(linear_verifiers)
+        verifier_globals.update(locals())
         linear_verifier_errors = 0
         
-        for index in range(0, n_pairs) :
-            I = pairs["input"][index]
-            O_measured = pairs["output"][index]
+        for pair_index in range(0, n_pairs) :
+            I = pairs["input"][pair_index]
+            O_measured = pairs["output"][pair_index]
+            O_predicted = ()
             
-            O_predicted = verifier_function(I)
+            #print(I)
+            
+            #O_predicted = verifier_function(I)
+            
             if common.are_grids_pixel_identical(O_measured, O_predicted) == False :
                 linear_verifier_errors += 1
                 

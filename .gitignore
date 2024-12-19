@@ -4,3 +4,5 @@
 /data/re_arc
 /old_unorganized_src/__pycache__
 src/tmp.txt
+/src/.ipynb_checkpoints
+src/pto arc.ipynb
