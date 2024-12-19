@@ -167,8 +167,15 @@ if __name__ == "__main__" :
     random_seed = 42
     max_number_of_keywords = 3
     max_program_depth = 10
-    max_function_evaluations = int(1e4)
-    technique_names = ['random_search']
+    max_function_evaluations = int(1e6)
+    population_size_ga = 100
+    particle_number_pso = 100
+    technique_names = [
+        'random_search', 
+        'hill_climber', 
+        'genetic_algorithm',
+        'particle_swarm_optimisation'
+                       ]
     repetitions_per_technique = 30
     
     # we need a lot of files for these experiments!
@@ -232,7 +239,7 @@ if __name__ == "__main__" :
             'do_nothing_frequency' : [],
             'train_fitness' : [],
             'test_fitness' : [],
-            'genotype' : [],
+            #'genotype' : [], # for the moment, let's ignore the genotype
             'phenotype' : [],
             'generations' : [],
             'run_time' : []
@@ -260,8 +267,30 @@ if __name__ == "__main__" :
                 
                 # if the experiment already exists, skip it
                 if len(existing_repetitions) <= r :
-                
-                    # run one the considered algorithms
+                    
+                    # some of the arguments might be technique-specific, so let's
+                    # perform some checks
+                    solver_args = {}
+                    callback_function = None
+                    if technique_name == 'random_search' or technique_name == 'hill_climber' :
+                        solver_args = {'n_generation' : max_function_evaluations}
+                        callback_function = lambda state : ((logger.info("Error: %d; Function calls: %d" % (state[1], state[2])) if state[2]%100==0 else None) or state[1]==0)
+                    elif technique_name == 'genetic_algorithm' :
+                        n_generation = int(max_function_evaluations / population_size_ga)
+                        solver_args = {
+                            'n_generation' : n_generation,
+                            'population_size' : population_size_ga,
+                                       }
+                        callback_function = lambda state : ((logger.info("Generation %d: Best fitness %d" % (state[2], state[1][0]))) or state[1][0]==0)
+                    elif technique_name == 'particle_swarm_optimisation' :
+                        n_iteration = int(max_function_evaluations / particle_number_pso)
+                        solver_args = {
+                            'n_iteration' : n_iteration,
+                            'n_particles' : particle_number_pso
+                            }
+                        callback_function = lambda state : ((logger.info("Generation %d: Best fitness %d" % (state[2], state[1][0]))) or state[1][0]==0)
+                    
+                    # run one of the considered algorithms
                     time_start = time.time()
                     (pheno, geno), fx, num_gen = run(
                         generate_random_expression, 
@@ -270,7 +299,7 @@ if __name__ == "__main__" :
                         fit_args=(counter:=Counter(),), 
                         Solver=technique_name, 
                         solver_args={'n_generation': max_function_evaluations}, 
-                        callback=lambda state : ((logger.info("Error: %d; Function calls: %d" % (state[1], state[2])) if state[2]%100==0 else None) or state[1]==0), 
+                        callback=callback_function, 
                         better=min
                         )
                     run_time = time.time() - time_start
@@ -283,7 +312,7 @@ if __name__ == "__main__" :
                     task_dictionary['do_nothing_frequency'].append(counter.get_count()[1])
                     task_dictionary['train_fitness'].append(fx)
                     task_dictionary['test_fitness'].append(fitness(pheno, counter_test:=Counter(), data='test'))
-                    task_dictionary['genotype'].append(str(geno))
+                    #task_dictionary['genotype'].append(str(geno))
                     task_dictionary['phenotype'].append(pheno)
                     task_dictionary['generations'].append(num_gen)
                     task_dictionary['run_time'].append(run_time)

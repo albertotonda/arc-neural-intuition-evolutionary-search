@@ -7,3 +7,4 @@ src/tmp.txt
 /src/.ipynb_checkpoints
 src/pto arc.ipynb
 /pto-experiments/__pycache__
+/pto-experiments/.vs

@@ -12,6 +12,8 @@ import logging
 import os
 import numpy as np
 
+from logging.handlers import RotatingFileHandler
+
 def initialize_logging(path: str, log_name: str = "", date: bool = True) -> logging.Logger :
     """
     Function that initializes the logger, opening one (DEBUG level) for a file 
@@ -39,7 +41,7 @@ def initialize_logging(path: str, log_name: str = "", date: bool = True) -> logg
                                   "%Y-%m-%d %H:%M:%S")
 
     # the 'RotatingFileHandler' object implements a log file that is automatically limited in size
-    fh = logging.handlers.RotatingFileHandler(log_name,
+    fh = RotatingFileHandler(log_name,
                              mode='w',
                              maxBytes=100*1024*1024,
                              backupCount=2,
