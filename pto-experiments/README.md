@@ -6,8 +6,8 @@ First, install the PTO python package.
 ```
 pip install git+https://github.com/Program-Trace-Optimisation/PTO.git
 ```
-Then, take the `re-arc` repository by Michael Hodel, and clone it inside the `../../local` directory.
+Then, take the `re-arc` repository by Michael Hodel, and clone it inside the `../local` directory.
 ```
-git clone https://github.com/michaelhodel/re-arc.git ../../local/re-arc
+git clone https://github.com/michaelhodel/re-arc.git ../local/re-arc
 ```
-Unzip the .zip file `../../local/re-arc/arc_original.zip` inside a subfolder `../../local/re-arc/arc_original/`. Now you are ready!
+Unzip the .zip file `../local/re-arc/arc_original.zip` inside a subfolder `../local/re-arc/arc_original/`. Now you are ready!
