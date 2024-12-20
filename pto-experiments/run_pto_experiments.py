@@ -298,7 +298,7 @@ if __name__ == "__main__" :
                         gen_args=(node_tree,),
                         fit_args=(counter:=Counter(),), 
                         Solver=technique_name, 
-                        solver_args={'n_generation': max_function_evaluations}, 
+                        solver_args=solver_args, 
                         callback=callback_function, 
                         better=min
                         )
