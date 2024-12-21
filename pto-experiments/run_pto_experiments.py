@@ -160,6 +160,27 @@ def fitness(expr, counter, data='train'):
     fit = sum(try_evaluate_example(fun, example) for example in task[data]) 
     return fit
 
+def arc_behavior_distance(sol1, sol2):
+    """
+    This is used for novelty search. Whole solutions are passed as arguments,
+    so we first need to convert them to 
+    """
+    def try_evaluate_example(fun1, fun2, example):
+        try:
+            output1 = fun1(example['input'])
+            output2 = fun2(example['input'])
+            return grid_distance(output1, output2)
+        except Exception as e:
+            # Return zero novelty as penalty for the error
+            return 0
+    
+    expr1 = sol1.pheno
+    expr2 = sol2.pheno
+    fun1 = eval('lambda I: ' + expr1)
+    fun2 = eval('lambda I: ' + expr2)
+
+    novelty = sum(try_evaluate_example(fun1, fun2, example) for example in task['train']) 
+    return novelty
 
 if __name__ == "__main__" :
     
@@ -175,6 +196,7 @@ if __name__ == "__main__" :
         'hill_climber', 
         'genetic_algorithm',
         'particle_swarm_optimisation'
+        'novelty_search',
                        ]
     repetitions_per_technique = 30
     
@@ -288,6 +310,16 @@ if __name__ == "__main__" :
                             'n_iteration' : n_iteration,
                             'n_particles' : particle_number_pso
                             }
+                        callback_function = lambda state : ((logger.info("Generation %d: Best fitness %d" % (state[2], state[1][0]))) or state[1][0]==0)
+                    elif technique_name == 'novelty_search' :
+                        n_generation = int(max_function_evaluations / population_size_ga)
+                        solver_args = {
+                            'n_generation' : n_generation,
+                            'population_size' : population_size_ga,
+                            'behavior_distance' : arc_behavior_distance,
+                            }
+                        # the state for novelty search looks like:
+                        # (population, fitness_population, 0, self.archive, novelty_scores, local_comp_scores) 
                         callback_function = lambda state : ((logger.info("Generation %d: Best fitness %d" % (state[2], state[1][0]))) or state[1][0]==0)
                     
                     # run one of the considered algorithms
