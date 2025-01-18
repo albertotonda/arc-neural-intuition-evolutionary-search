@@ -184,6 +184,10 @@ def arc_behavior_distance(sol1, sol2):
 
 if __name__ == "__main__" :
     
+    # this is just a note for the experiments needed for the GECCO paper
+    # For 5 keywords, found a total of 6 tasks: 
+    # ['62c24649' '8d5021e8' '6f8cd79b' 'c1d99e64' '3af2c5a8' '67e8384a']
+    
     # hard-coded values
     random_seed = 42
     max_number_of_keywords = 3
@@ -195,41 +199,54 @@ if __name__ == "__main__" :
         'random_search', 
         'hill_climber', 
         'genetic_algorithm',
-        'particle_swarm_optimisation'
-        'novelty_search',
+        #'particle_swarm_optimisation'
+        #'novelty_search',
                        ]
     repetitions_per_technique = 30
+    
+    command_line_task = "" # check if a task has been specified on the command line
+    if len(sys.argv) > 1 :
+        command_line_task = sys.argv[1]
     
     # we need a lot of files for these experiments!
     file_pto_prior = "../data/root_tree.json"
     file_task_keywords = "../data/neural_network_y.csv"
     folder_arc_tasks = "../local/re-arc/arc_original/training/"
-    folder_output = "../local/" + os.path.basename(__file__)[:-3]
+    folder_output = "../local/" + os.path.basename(__file__)[:-3] + "_novelty_search"
 
     # necessary preparations: create folder and initialize logger
     if not os.path.exists(folder_output) :
         os.makedirs(folder_output)    
     
-    logger = initialize_logging(folder_output, "log", date=False)
+    log_name = "log"
+    if command_line_task != "" :
+        log_name = command_line_task
+    logger = initialize_logging(folder_output, log_name, date=False)
     
     # let's prepare a separate random number generator; PTO uses the global
     # 'random' module, so should not contaminate that
     local_prng = random.Random()
     local_prng.seed(random_seed)
     
-    # first, load the table with the keywords used in each task
-    logger.info("Loading keyword table file \"%s\"..." % file_task_keywords)
-    df = pd.read_csv(file_task_keywords)
-    # sort the tasks by sum of number of keywords by row
-    numeric_cols = df.select_dtypes(include="number")
-    df["row_sum"] = numeric_cols.sum(axis=1)
-    df = df.sort_values(by="row_sum", ascending=True)
-    # select the tasks
-    df_selection = df[df["row_sum"] <= max_number_of_keywords]
-    
-    target_tasks = df_selection["task_id"].values
-    logger.info("Tasks selected with %d keywords or less: %s" % 
-                (max_number_of_keywords, str(target_tasks)))
+    target_tasks = []
+    if command_line_task != "" :
+        target_tasks.append(command_line_task)
+        logger.info("A task has been specified on command line: \"%s\"" % 
+                    command_line_task)
+    else :
+        # first, load the table with the keywords used in each task
+        logger.info("Loading keyword table file \"%s\"..." % file_task_keywords)
+        df = pd.read_csv(file_task_keywords)
+        # sort the tasks by sum of number of keywords by row
+        numeric_cols = df.select_dtypes(include="number")
+        df["row_sum"] = numeric_cols.sum(axis=1)
+        df = df.sort_values(by="row_sum", ascending=True)
+        # select the tasks
+        df_selection = df[df["row_sum"] <= max_number_of_keywords]
+        
+        target_tasks = df_selection["task_id"].values
+        logger.info("Tasks selected with %d keywords or less: %s (%d tasks total)" % 
+                    (max_number_of_keywords, str(target_tasks), len(target_tasks)))
     
     # load prior on program generation
     logger.info("Loading program prior file \"%s\"..." % file_pto_prior)
@@ -242,8 +259,9 @@ if __name__ == "__main__" :
     logger.info("Random program: \"%s\"" % random_program)
     
     # start the experiments!
-    for task_id in target_tasks :
-        logger.info("Starting experiments on task \"%s\"..." % task_id)
+    for task_index, task_id in enumerate(target_tasks) :
+        logger.info("Starting experiments on task \"%s\" [%d/%d]..." % 
+                    (task_id, task_index+1, len(target_tasks)))
         logger.info("Loading task data...")
         
         with open(os.path.join(folder_arc_tasks, task_id + ".json"), "r") as fp :
@@ -317,6 +335,7 @@ if __name__ == "__main__" :
                             'n_generation' : n_generation,
                             'population_size' : population_size_ga,
                             'behavior_distance' : arc_behavior_distance,
+                            'archive_size' : 100, # default value is 1000
                             }
                         # the state for novelty search looks like:
                         # (population, fitness_population, 0, self.archive, novelty_scores, local_comp_scores) 
@@ -362,7 +381,7 @@ if __name__ == "__main__" :
         # end of the task
         
         # TODO: remove this, it's just debugging
-        sys.exit(0)
+        #sys.exit(0)
         
     # finish the experiments
     close_logging(logger)
