@@ -10,4 +10,7 @@ Then, take the `re-arc` repository by Michael Hodel, and clone it inside the `..
 ```
 git clone https://github.com/michaelhodel/re-arc.git ../local/re-arc
 ```
-Unzip the .zip file `../local/re-arc/arc_original.zip` inside a subfolder `../local/re-arc/arc_original/`. Now you are ready!
+Unzip the .zip file `../local/re-arc/arc_original.zip` inside a subfolder `../local/re-arc/arc_original/`. Now you are ready to run the main script:
+```
+python run_pto_experiments.py
+```
